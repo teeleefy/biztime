@@ -29,12 +29,11 @@ app.use(function(req, res, next) {
 
 app.use((err, req, res, next) => {
   res.status(err.status || 500);
-
+  let status = err.status;
+  let message = err.message;
   return res.json({
-    error: err,
-    message: err.message
+    error: { message, status }
   });
 });
-
 
 module.exports = app;
