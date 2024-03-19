@@ -4,6 +4,7 @@ const express = require("express");
 const router = express.Router();
 const ExpressError = require("../expressError")
 const db = require("../db");
+const slugify = require('slugify');
 
 /** Get all companies: [company, company, company] */
 // **GET /companies :** Returns list of companies, like `{companies: [{code, name}, ...]}`
@@ -26,13 +27,19 @@ router.get('/:code', async function(req, res, next){
         try{
             let code = req.params.code; 
             const companyRes = await db.query(`SELECT * FROM companies WHERE code=$1`, [code]);
+            //acquire invoices associated with this company
             const invoicesRes = await db.query(`SELECT id FROM invoices WHERE comp_code = $1`, [code]);
+            //acquire industries associated with this company
+            const indRes = await db.query(`SELECT ind_code FROM industry_company WHERE comp_code = $1`, [code]);
+            let industries = indRes.rows;
+            //
             if(companyRes.rows.length === 0){
                 throw new ExpressError('Did not find that company in our records', 404);
             }
             const company = companyRes.rows[0];
             const invoices = invoicesRes.rows;
             company.invoices = invoices.map(inv => inv.id);
+            company.industries = industries;
             return res.json({company: company});
         }
         catch(e){
@@ -44,7 +51,8 @@ router.get('/:code', async function(req, res, next){
 // **POST /companies :** Adds a company. Needs to be given JSON like: `{code, name, description}` Returns obj of new company:  `{company: {code, name, description}}`
 router.post('/', async function(req, res, next){
         try{
-            let { code, name, description } = req.body; 
+            const { name, description } = req.body; 
+            const code = slugify(name, {lower: true});
             const results = await db.query(`INSERT INTO companies (code, name, description) VALUES ($1, $2, $3) RETURNING code, name, description`, [code, name, description]);
             return res.status(201).json({company: results.rows});
         }

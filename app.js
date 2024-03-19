@@ -11,11 +11,13 @@ app.use(express.json());
 //connect to route pages 
 const cRoutes = require("./routes/companies");
 const iRoutes = require("./routes/invoices");
+const indRoutes = require("./routes/industries");
 
 
 //have app use the routes listed in those pages
 app.use("/companies", cRoutes);
 app.use("/invoices", iRoutes);
+app.use("/industries", indRoutes);
 
 
 /** 404 handler */
