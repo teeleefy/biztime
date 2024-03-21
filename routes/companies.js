@@ -38,8 +38,12 @@ router.get('/:code', async function(req, res, next){
             }
             const company = companyRes.rows[0];
             const invoices = invoicesRes.rows;
-            company.invoices = invoices.map(inv => inv.id);
-            company.industries = industries;
+            if (invoices.length > 0){
+               company.invoices = invoices.map(inv => inv.id); 
+            }
+            if (industries.length > 0){
+                company.industries = industries;
+            }
             return res.json({company: company});
         }
         catch(e){
@@ -102,6 +106,10 @@ router.put('/:code', async function(req, res, next){
 router.delete('/:code', async function(req, res, next){
         try{
             let code = req.params.code; 
+            const currentCompanyDetails = await db.query(`SELECT * FROM companies WHERE code=$1`, [code]);
+            if(currentCompanyDetails.rows.length === 0){
+            throw new ExpressError(`Did not find that company in our records`, 404)
+            }
             const results = await db.query(`DELETE FROM companies WHERE code=$1`, [code]);
             return res.send({ status : "deleted"});
         }

@@ -10,7 +10,7 @@ const db = require("../db");
 router.get('/', async function(req, res, next){
         try{
             const results = await db.query('SELECT * FROM invoices');
-            return res.json(results.rows);
+            return res.json({invoices: results.rows});
         }
         catch(e){
             next(e);
@@ -31,6 +31,7 @@ router.get('/:id', async function(req, res, next){
             const invoice = {
                     id: data.id,
                     amt: data.amt,
+                    comp_code: data.comp_code,
                     paid: data.paid,
                     add_date: data.add_date,
                     paid_date: data.paid_date,
@@ -54,7 +55,7 @@ router.get('/:id', async function(req, res, next){
 router.post('/', async function(req, res, next){
         try{
             let { compCode, amt} = req.body; 
-            const results = await db.query(`INSERT INTO invoices (comp_code, amt) VALUES ($1, $2) RETURNING comp_code, amt, paid, add_date, paid_date`, [compCode, amt]);
+            const results = await db.query(`INSERT INTO invoices (comp_code, amt) VALUES ($1, $2) RETURNING id, comp_code, amt, paid, add_date, paid_date`, [compCode, amt]);
             return res.status(201).json({invoice: results.rows[0]});
         }
         catch(e){
@@ -76,8 +77,8 @@ router.put('/:id', async function(req, res, next){
         if (currInvoiceInfo.rows.length === 0) {
         throw new ExpressError(`Did not find that invoice in our records`, 404);
         }
-
-        let amt = req.body.amt; 
+        let amt;
+        req.body.amt ? amt = req.body.amt : amt = currInvoiceInfo.rows[0].amt;
         let paid = req.body.paid; 
         let paidDate;
         //Check if there is already a current paid_date recorded in the database;
